@@ -1,29 +1,4 @@
-#ifdef IDF_BUILD
-#include <stdio.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <driver/gpio.h>
-#include "sdkconfig.h"
-#endif
-
-#include <Arduino.h>
-#include "xtensa/core-macros.h"
-#include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 #include "main.h"
-#include "display.h"
-#include "buffer.h"
-#include "network.h"
-
-// HUB75E pinout
-// R1 | G1
-// B1 | GND
-// R2 | G2
-// B2 | E
-//  A | B
-//  C | D
-// CLK| LAT
-// OE | GND
-
 
 TaskHandle_t DisplayImageHandle = NULL;
 TaskHandle_t BufferHandle = NULL;
@@ -39,33 +14,36 @@ void setup(){
     initwifi();
 
   //could pin to core to put wifi on a core
-  xTaskCreate(
+  xTaskCreatePinnedToCore(
     DisplayImage, // task function
     "DisplayImage", // task name
     2048, // stack size
     NULL, // params
     3, // priority
-    &DisplayImageHandle // task handle
+    &DisplayImageHandle, // task handle
+    1
   );
 
   
-  xTaskCreate(
+  xTaskCreatePinnedToCore(
     BufferTask, // task function
     "BufferTask", // task name
     2048, // stack size
     NULL, // params
     2, // priority
-    &BufferHandle // task handle
+    &BufferHandle, // task handle
+    1
   );
 
   
-  xTaskCreate(
+  xTaskCreatePinnedToCore(
     NetworkTask, // task function
     "NetworkTask", // task name
     2048, // stack size
     NULL, // params
     3, // priority
-    &NetworkFetchHandle // task handle
+    &NetworkFetchHandle, // task handle
+    0
   );
 
 }
