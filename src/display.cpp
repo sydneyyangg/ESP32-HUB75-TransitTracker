@@ -22,7 +22,6 @@ void initmatrix(){
 
 void DisplayImage(void *pvParameters){
     for (;;){
-        Serial.begin(115200);
 
         Serial.print("ClearScreen()");
         matrix->clearScreen();

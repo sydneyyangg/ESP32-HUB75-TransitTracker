@@ -36,6 +36,7 @@ void setup(){
 
     initmatrix();
     initbackbuffer();
+    initwifi();
 
   //could pin to core to put wifi on a core
   xTaskCreate(
