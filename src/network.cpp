@@ -15,7 +15,7 @@ void NetworkTask(void *pvParameters){
 
 void initwifi()
 {
-    Serial.print("ESP32 Servo Tracker Starting...");
+    Serial.println("ESP32 Servo Tracker Starting...");
 
     // Initialize built-in LED GPIO for blink endpoint
     gpio_reset_pin(BLINK_GPIO);
@@ -32,7 +32,7 @@ void initwifi()
     ESP_ERROR_CHECK(ret);
 
     // Initialize WiFi
-    Serial.print("Initializing WiFi...");
+    Serial.println("Initializing WiFi...");
     ret = wifi_init_sta();
     
     if (ret != ESP_OK) {
@@ -50,23 +50,11 @@ void initwifi()
         return;
     }
 
-    Serial.print("Web server started successfully!");
-    Serial.print("Ready to receive commands at http://<ESP32_IP>/move?direction=<left|right|up|down|center>");
+    Serial.println("Web server started successfully!");
+    Serial.println("Ready to receive commands at http://<ESP32_IP>/blink");
     
 }
 
-
-#if CONFIG_LWIP_HOOK_IP6_INPUT_CUSTOM
-extern "C" int lwip_hook_ip6_input(struct pbuf *p, struct netif *inp) __attribute__((weak));
-extern "C" int lwip_hook_ip6_input(struct pbuf *p, struct netif *inp) {
-  if (ip6_addr_isany_val(inp->ip6_addr[0].u_addr.ip6)) {
-    // We don't have an LL address -> eat this packet here, so it won't get accepted on input netif
-    pbuf_free(p);
-    return 1;
-  }
-  return 0;
-}
-#endif
 
 // WiFi event handler, when WiFi or IP events occur
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
@@ -93,29 +81,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
 }
-/*
-// Scan for available WiFi networks
-void wifi_scan(void)
-{
-    ESP_LOGI(TAG, "Starting WiFi scan...");
-    
-    uint16_t number = 10;
-    wifi_ap_record_t ap_info[10];
-    uint16_t ap_count = 0;
-    memset(ap_info, 0, sizeof(ap_info));
 
-    esp_wifi_scan_start(NULL, true);
-    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&number, ap_info));
-    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_count));
-    
-    ESP_LOGI(TAG, "Found %d WiFi networks:", ap_count);
-    for (int i = 0; (i < 10) && (i < ap_count); i++) {
-        ESP_LOGI(TAG, "  %d: %s (RSSI: %d, Auth: %d, Channel: %d)", 
-                 i+1, ap_info[i].ssid, ap_info[i].rssi, 
-                 ap_info[i].authmode, ap_info[i].primary);
-    }
-}
-*/
 // Initialize WiFi
 esp_err_t wifi_init_sta(void)
 {
@@ -157,11 +123,8 @@ esp_err_t wifi_init_sta(void)
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    ESP_LOGI(TAG, "WiFi initialization complete");
+    Serial.println("WiFi initialization complete");
     
-    // Scan for networks before connecting
-    //wifi_scan();
-
     // Wait for connection or failure
     EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
             WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
@@ -176,7 +139,7 @@ esp_err_t wifi_init_sta(void)
         Serial.printf("Failed to connect to SSID: %s", WIFI_SSID);
         return ESP_FAIL;
     } else {
-        Serial.print("Unexpected WiFi event");
+        Serial.println("Unexpected WiFi event");
         return ESP_FAIL;
     }
 }
@@ -189,61 +152,10 @@ static esp_err_t root_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-// HTTP GET handler for "/move"
-static esp_err_t move_get_handler(httpd_req_t *req)
-{
-    char query[100]; // holds URL query string (after ?)
-    char direction[20] = {0}; // holds direction query param (e.g. left)
-    
-    // Get query string
-    if (httpd_req_get_url_query_str(req, query, sizeof(query)) == ESP_OK) {
-        // Extract "direction" parameter
-        if (httpd_query_key_value(query, "direction", direction, sizeof(direction)) == ESP_OK) {
-            ESP_LOGI(TAG, "Received command: %s", direction);
-            
-            // Process command
-            if (strcmp(direction, "left") == 0) {
-                ESP_LOGI(TAG, "Moving LEFT");
-                // TODO: Add servo control code here
-                httpd_resp_send(req, "Moved left", HTTPD_RESP_USE_STRLEN);
-            }
-            else if (strcmp(direction, "right") == 0) {
-                ESP_LOGI(TAG, "Moving RIGHT");
-                // TODO: Add servo control code here
-                httpd_resp_send(req, "Moved right", HTTPD_RESP_USE_STRLEN);
-            }
-            else if (strcmp(direction, "up") == 0) {
-                ESP_LOGI(TAG, "Moving UP");
-                // TODO: Add servo control code here
-                httpd_resp_send(req, "Moved up", HTTPD_RESP_USE_STRLEN);
-            }
-            else if (strcmp(direction, "down") == 0) {
-                ESP_LOGI(TAG, "Moving DOWN");
-                // TODO: Add servo control code here
-                httpd_resp_send(req, "Moved down", HTTPD_RESP_USE_STRLEN);
-            }
-            else if (strcmp(direction, "center") == 0) {
-                ESP_LOGI(TAG, "Moving to CENTER");
-                // TODO: Add servo control code here
-                httpd_resp_send(req, "Centered", HTTPD_RESP_USE_STRLEN);
-            }
-            else {
-                httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid direction");
-                return ESP_FAIL;
-            }
-            
-            return ESP_OK;
-        }
-    }
-    
-    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing direction parameter");
-    return ESP_FAIL;
-}
-
 // HTTP GET handler for "/blink" - blinks the built-in LED a few times
 static esp_err_t blink_get_handler(httpd_req_t *req)
 {
-    // Blink the built-in LED 3 times
+    // Blink the built-in LED 10 times
     for (int i = 0; i < 10; i++) {
         gpio_set_level(BLINK_GPIO, 1);
         vTaskDelay(pdMS_TO_TICKS(200));
@@ -265,13 +177,6 @@ static const httpd_uri_t root = {
     .user_ctx  = NULL
 };
 
-static const httpd_uri_t move = {
-    .uri       = "/move",
-    .method    = HTTP_GET,
-    .handler   = move_get_handler,
-    .user_ctx  = NULL
-};
-
 static const httpd_uri_t blink = {
     .uri       = "/blink",
     .method    = HTTP_GET,
@@ -290,7 +195,6 @@ static httpd_handle_t start_webserver(void)
     if (httpd_start(&server, &config) == ESP_OK) {
         ESP_LOGI(TAG, "Registering URI handlers");
         httpd_register_uri_handler(server, &root);
-        httpd_register_uri_handler(server, &move);
         httpd_register_uri_handler(server, &blink);
         return server;
     }
@@ -299,3 +203,18 @@ static httpd_handle_t start_webserver(void)
     return NULL;
 }
 
+
+// define lwip ipv6 hook to do nothing
+// needed to patch esp-idf and arduino environment compatibility
+// pre v. 3.2.0 (link)
+#if CONFIG_LWIP_HOOK_IP6_INPUT_CUSTOM
+extern "C" int lwip_hook_ip6_input(struct pbuf *p, struct netif *inp) __attribute__((weak));
+extern "C" int lwip_hook_ip6_input(struct pbuf *p, struct netif *inp) {
+  if (ip6_addr_isany_val(inp->ip6_addr[0].u_addr.ip6)) {
+    // We don't have an LL address -> eat this packet here, so it won't get accepted on input netif
+    pbuf_free(p);
+    return 1;
+  }
+  return 0;
+}
+#endif

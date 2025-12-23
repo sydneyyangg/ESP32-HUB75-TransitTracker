@@ -14,8 +14,10 @@
 #include "driver/gpio.h"
 
 // WiFi Configuration
-#define WIFI_SSID      ""
-#define WIFI_PASS      ""  // Empty for open network, or set password for secured network
+//#define WIFI_SSID      "Toby"
+//#define WIFI_PASS      "Micah6JMH"  // Empty for open network, or set password for secured network
+#define WIFI_SSID      "Testing"
+#define WIFI_PASS      "12312312"  // Empty for open network, or set password for secured network
 #define MAX_RETRY      5
 // Built-in LED (many ESP32 dev boards use GPIO2)
 #define BLINK_GPIO GPIO_NUM_2
