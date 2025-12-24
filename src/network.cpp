@@ -9,7 +9,11 @@ static int s_retry_num = 0;
 
 void NetworkTask(void *pvParameters){
     for (;;){
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        // connect to wifi
+        // fetch data
+        // parse data
+        ESP_ERROR_CHECK(esp_wifi_stop());
+        vTaskDelay(30000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -41,20 +45,7 @@ void initwifi()
         esp_restart();
         return;
     }
-// Start web server
-    httpd_handle_t server = start_webserver();
-    if (server == NULL) {
-        Serial.print("Failed to start web server! Restarting in 10 seconds...");
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
-        esp_restart();
-        return;
-    }
-
-    Serial.println("Web server started successfully!");
-    Serial.println("Ready to receive commands at http://<ESP32_IP>/blink");
-    
 }
-
 
 // WiFi event handler, when WiFi or IP events occur
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
@@ -143,66 +134,6 @@ esp_err_t wifi_init_sta(void)
         return ESP_FAIL;
     }
 }
-
-// HTTP GET handler for root "/"
-static esp_err_t root_get_handler(httpd_req_t *req)
-{
-    const char* resp_str = "ESP32 Servo Tracker Ready\n";
-    httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
-// HTTP GET handler for "/blink" - blinks the built-in LED a few times
-static esp_err_t blink_get_handler(httpd_req_t *req)
-{
-    // Blink the built-in LED 10 times
-    for (int i = 0; i < 10; i++) {
-        gpio_set_level(BLINK_GPIO, 1);
-        vTaskDelay(pdMS_TO_TICKS(200));
-        gpio_set_level(BLINK_GPIO, 0);
-        vTaskDelay(pdMS_TO_TICKS(200));
-    }
-
-    httpd_resp_send(req, "Blinked", HTTPD_RESP_USE_STRLEN);
-    ESP_LOGI(TAG, "Blink test passed.");
-
-    return ESP_OK;
-}
-
-// URI handlers
-static const httpd_uri_t root = {
-    .uri       = "/",
-    .method    = HTTP_GET,
-    .handler   = root_get_handler,
-    .user_ctx  = NULL
-};
-
-static const httpd_uri_t blink = {
-    .uri       = "/blink",
-    .method    = HTTP_GET,
-    .handler   = blink_get_handler,
-    .user_ctx  = NULL
-};
-
-// Start web server
-static httpd_handle_t start_webserver(void)
-{
-    httpd_handle_t server = NULL;
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.lru_purge_enable = true;
-
-    ESP_LOGI(TAG, "Starting HTTP server on port: '%d'", config.server_port);
-    if (httpd_start(&server, &config) == ESP_OK) {
-        ESP_LOGI(TAG, "Registering URI handlers");
-        httpd_register_uri_handler(server, &root);
-        httpd_register_uri_handler(server, &blink);
-        return server;
-    }
-
-    Serial.print("Error starting HTTP server!");
-    return NULL;
-}
-
 
 // define lwip ipv6 hook to do nothing
 // needed to patch esp-idf and arduino environment compatibility
