@@ -2,6 +2,9 @@
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 #include <FastLED.h>
 
+#include "buffer.h"
+#include "parse.h"
+
 #define PATTERN_DELAY 2000
 
 #define PANEL_WIDTH 64

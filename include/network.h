@@ -1,4 +1,9 @@
 #include <Arduino.h>
+
+#ifdef INADDR_NONE
+#undef INADDR_NONE
+#endif
+
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -11,9 +16,11 @@
 #include "lwip/netif.h"
 #include "driver/gpio.h"
 
-#include "parse.cpp"
+#include "parse.h"
 
 // WiFi Configuration
+#define WIFI_SSID      "Toby"
+#define WIFI_PASS      "Micah6JMH"  // Empty for open network, or set password for secured network
 
 #define MAX_RETRY      5
 // Built-in LED (many ESP32 dev boards use GPIO2)

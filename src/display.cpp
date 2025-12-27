@@ -1,9 +1,9 @@
 #include "display.h"
-#include "buffer.h"
 
 MatrixPanel_I2S_DMA *matrix = nullptr;
 
-const char *str = "* ESP32 I2S DMA *";
+//char *str = "* ESP32 I2S DMA *";
+char str[32];
 CRGB *frontLedBuff = (CRGB *)malloc(NUM_LEDS * sizeof(CRGB));  
 
 void initmatrix(){
@@ -23,20 +23,8 @@ void initmatrix(){
 void DisplayImage(void *pvParameters){
     for (;;){
 
-        Serial.print("ClearScreen()");
+        Serial.println("ClearScreen()");
         matrix->clearScreen();
-        delay(PATTERN_DELAY);
-
-        Serial.println("Fill screen: RED");
-        matrix->fillScreenRGB888(255, 0, 0);
-        delay(PATTERN_DELAY);
-
-        Serial.println("Fill screen: GREEN");
-        matrix->fillScreenRGB888(0, 255, 0);
-        delay(PATTERN_DELAY);
-
-        Serial.println("Fill screen: BLUE");
-        matrix->fillScreenRGB888(0, 0, 255);
         delay(PATTERN_DELAY);
          
         // Clearing CRGB ledbuff
@@ -47,18 +35,29 @@ void DisplayImage(void *pvParameters){
         
         //display on screen 
         mxfill(frontLedBuff);
-        Serial.printf("LedBuffer MxFill");
+        Serial.println("LedBuffer MxFill");
         delay(PATTERN_DELAY);
 
-        Serial.printf("Text display");
+        Serial.println("Text display");
         matrix->clearScreen();
+        snprintf(str, sizeof(str), "* ESP32 I2S DMA!!! *");
         drawText(0);
         delay(PATTERN_DELAY);
+
+        Serial.print("Minutes Until: ");
+        Serial.println(minutes_until);
+        matrix->clearScreen();
+        snprintf(str, sizeof(str), "%d min", minutes_until);
+        drawText(0);
         
         Serial.println("\n====\n");
 
         // take a rest for a while
-        delay(10000);
+        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        
+        UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+        Serial.printf("DisplayTask stack free: %u bytes\n", watermark * sizeof(StackType_t));
+
     }
 }
 

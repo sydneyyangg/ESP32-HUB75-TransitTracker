@@ -1,5 +1,4 @@
 // using fastled, cofnigure a buffer to send to dma 
-#include "buffer.h"
 #include "display.h"
 
 CRGB *ledbuff = (CRGB *)malloc(NUM_LEDS * sizeof(CRGB));  
@@ -13,6 +12,7 @@ void initbackbuffer(){
 
 void BufferTask(void *pvParameters){
   for (;;){
+     Serial.println("buffer task called");
     // created random color gradient in ledbuff
         uint8_t color1 = 0;
         uint8_t color2 = random8();
@@ -26,6 +26,11 @@ void BufferTask(void *pvParameters){
 
             ledbuff[i].b=color3;
         }
+        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        
+        UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+        Serial.printf("BufferTask stack free: %u bytes\n", watermark * sizeof(StackType_t));
+
    }
 }
 

@@ -8,12 +8,17 @@ static EventGroupHandle_t s_wifi_event_group; // This is set as either the fail 
 static int s_retry_num = 0;
 
 void NetworkTask(void *pvParameters){
+
     for (;;){
+        Serial.println("network task called");
         // connect to wifi
-        init_time();
         parse_pb();
         //ESP_ERROR_CHECK(esp_wifi_stop());
-        vTaskDelay(30000 / portTICK_PERIOD_MS);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        
+        UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+        Serial.printf("NetworkTask stack free: %u bytes\n", watermark * sizeof(StackType_t));
+
     }
 }
 

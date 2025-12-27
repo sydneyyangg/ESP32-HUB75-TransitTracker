@@ -12,8 +12,8 @@ void setup(){
     initmatrix();
     initbackbuffer();
     initwifi();
+    init_time();
 
-  //could pin to core to put wifi on a core
   xTaskCreatePinnedToCore(
     DisplayImage, // task function
     "DisplayImage", // task name
@@ -39,7 +39,7 @@ void setup(){
   xTaskCreatePinnedToCore(
     NetworkTask, // task function
     "NetworkTask", // task name
-    2048, // stack size
+    20480, // stack size
     NULL, // params
     3, // priority
     &NetworkFetchHandle, // task handle

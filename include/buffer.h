@@ -4,6 +4,8 @@
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 #include <FastLED.h>
 
+#include "buffer.h"
+
 // gradient buffer
 extern CRGB *ledbuff;
 //

@@ -12,6 +12,7 @@
 #include "display.h"
 #include "buffer.h"
 #include "network.h"
+#include "parse.h"
 
 #include <FastLED.h>
 
