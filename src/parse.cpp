@@ -1,18 +1,28 @@
+// pb
 #include "pb_encode.h"
 #include "pb_decode.h"
 #include "gtfs-realtime.pb.h"
+// http client
+#include "esp_http_client.h"
+// time
+#include "esp_sntp.h"
+#include <time.h>
+// serial
 #include "Arduino.h"
 
-#include "esp_http_client.h"
-
 #define MAX_HTTP_RECV_BUFFER 4096
+#define ROUTE_ID_MAX 16
+#define STOP_ID_MAX 32
 
 uint8_t pb_buffer[MAX_HTTP_RECV_BUFFER];
 int *pb_len;
 bool status = false;
+int minutes_until;
+
 typedef struct {
     bool route_match;
     bool stop_match;
+    bool found;
     int arrivetime;
 } ParseState;
 
@@ -45,7 +55,10 @@ esp_err_t http_fetch_pb(uint8_t *out_buf, int max_len, int *out_len){
             (char *)(out_buf + total_read),
             max_len - total_read
         );
-        if (read <= 0) break;
+        if (read <= 0) {
+            Serial.println("Could not fetch from http.");
+            return ESP_FAIL;
+        }
         total_read += read;
     }
 
@@ -54,104 +67,7 @@ esp_err_t http_fetch_pb(uint8_t *out_buf, int max_len, int *out_len){
     return ESP_OK;
 }
 
-bool entity_cb(pb_istream_t *stream, const pb_field_t *field, void **arg){
-
-    transit_realtime_FeedEntity currententity = transit_realtime_FeedEntity_init_zero;
-
-    // entity => tripupdate => route_id must be ... (201) or ... [later]
-    currententity.trip_update.trip.route_id.funcs.decode = routeid_cb;
-    currententity.trip_update.trip.route_id.arg = &state;
-
-    currententity.trip_update.stop_time_update.funcs.decode = stoptimeupdates_cb;
-    currententity.trip_update.stop_time_update.arg = &state;
-
-    status = pb_decode(stream, &transit_realtime_FeedEntity_msg, &currententity);
-    checkErrors(status, stream);
-
-    // route_id check
-    if (state == false){return false;}
-    // entity must have trip update to proceed
-    if (!currententity.has_trip_update){return false;}
-
-    return true;
-}
-
-//pb_callback_t _transit_realtime_TripDescriptor::route_id
-//The route_id from the GTFS that this selector refers to.
-bool routeid_cb(pb_istream_t *stream, const pb_field_t *field, void **arg){
-    char route_id[32];   // adjust size if needed
-
-    // Read string safely
-    if (!pb_read(stream, (uint8_t *)route_id, stream->bytes_left)) {return false;}
-
-    route_id[stream->bytes_left] = '\0'; // null-terminate
-
-    Serial.printf("Route ID: %s\n", route_id);
-    bool *state = (bool *)(*arg);
-
-    if (strcmp(route_id, "?????") != 0) { // TWEAK THIS RMBR
-        *state = false; // route not matched
-        return true;   
-    }
-
-    *state = true;     // mark route matched
-
-    return true;
-}
-
-bool stoptimeupdates_cb(pb_istream_t *stream, const pb_field_t *field, void **arg){
-    transit_realtime_TripUpdate_StopTimeUpdate stoptimeupdatemsg = transit_realtime_TripUpdate_StopTimeUpdate_init_zero;
-    
-    stoptimeupdatemsg.stop_id.funcs.decode = stopid_cb;
-    stoptimeupdatemsg.stop_id.arg = &state;
-
-    status = pb_decode(stream, &transit_realtime_TripUpdate_StopTimeUpdate_msg, &stoptimeupdatemsg);
-    checkErrors(status, stream);
-
-    // quit if does not have arrival update
-    if (!stoptimeupdatemsg.has_arrival) {return false;}
-    // quit if stop_id is not desired stop
-    if (state == false){return false;}
-
-    // use given time if provided
-    if (stoptimeupdatemsg.arrival.has_time)
-        {state.arrivetime = stoptimeupdatemsg.arrival.time;}
-    else // use scheduled time
-        {state.arrivetime = stoptimeupdatemsg.arrival.scheduled_time;}
-    
-    int delaytime = 0;
-    if (stoptimeupdatemsg.arrival.has_delay)
-        {delaytime = stoptimeupdatemsg.arrival.delay;}
-
-    state.arrivetime += delaytime;
-
-    return true;
-}
-
-bool stopid_cb(pb_istream_t *stream, const pb_field_t *field, void **arg){
-    char stop_id[32];   // adjust size if needed
-
-    // Read string safely
-    if (!pb_read(stream, (uint8_t *)stop_id, stream->bytes_left)) {return false;}
-
-    stop_id[stream->bytes_left] = '\0'; // null-terminate
-
-    Serial.printf("Stop ID: %s\n", stop_id);
-    bool *state = (bool *)(*arg);
-    
-
-    if (strcmp(stop_id, "4072") != 0) { 
-        *state = false; // stop not matched
-        return true;   
-    }
-
-    *state = true;     // stop route matched
-
-    return true;
-}
-
-
-esp_err_t parse_pb(int *out_eta){
+esp_err_t parse_pb(){
 
     if(http_fetch_pb(pb_buffer, MAX_HTTP_RECV_BUFFER, pb_len) == ESP_OK){
         Serial.printf("Fetched %d bytes", *pb_len);
@@ -168,8 +84,134 @@ esp_err_t parse_pb(int *out_eta){
     ParseState state = {0};
     feedmsg.entity.arg = &state;  
     feedmsg.entity.funcs.decode = entity_cb;
-    if (!feedmsg.entity.funcs.decode) {return;}
     status = pb_decode(&stream, &transit_realtime_FeedMessage_msg, &feedmsg);
+    checkErrors(status, &stream);
+}
+
+bool entity_cb(pb_istream_t *stream, const pb_field_t *field, void **arg){
+
+    transit_realtime_FeedEntity currententity = transit_realtime_FeedEntity_init_zero;
+    ParseState *parseCheck = (ParseState *)(*arg);
+
+    // entity => tripupdate => route_id must be ... (201) or ... [later]
+    currententity.trip_update.trip.route_id.funcs.decode = routeid_cb;
+    currententity.trip_update.trip.route_id.arg = parseCheck;
+
+    currententity.trip_update.stop_time_update.funcs.decode = stoptimeupdates_cb;
+    currententity.trip_update.stop_time_update.arg = parseCheck;
+
+    parseCheck->route_match = false;
+    parseCheck->stop_match = false;
+
+    status = pb_decode(stream, &transit_realtime_FeedEntity_msg, &currententity);
+    checkErrors(status, stream);
+    if (!status) return false;
+
+    // entity must have trip update to proceed
+    if (!currententity.has_trip_update){return true;}
+    // route_id check
+    if (parseCheck->route_match == false){return true;}
+
+
+    return true;
+}
+
+//pb_callback_t _transit_realtime_TripDescriptor::route_id
+//The route_id from the GTFS that this selector refers to.
+bool routeid_cb(pb_istream_t *stream, const pb_field_t *field, void **arg){
+    
+    char route_id[ROUTE_ID_MAX];   // adjust size if needed
+
+    size_t len = stream->bytes_left;
+    if (len >= sizeof(route_id)) len = sizeof(route_id) - 1;
+
+    if (!pb_read(stream, (uint8_t *)route_id, len)) return false;
+    route_id[len] = '\0';
+
+    Serial.printf("Route ID: %s\n", route_id);
+    ParseState *st = (ParseState *)(*arg);
+
+    if (strcmp(route_id, "?????") != 0) { // TWEAK THIS RMBR
+        st->route_match = false; // route not matched
+        return true;   
+    }
+
+    st->route_match = true;     // mark route matched
+
+    return true;
+}
+
+bool stoptimeupdates_cb(pb_istream_t *stream, const pb_field_t *field, void **arg){
+    
+    transit_realtime_TripUpdate_StopTimeUpdate stoptimeupdatemsg = transit_realtime_TripUpdate_StopTimeUpdate_init_zero;
+    ParseState *parseCheck = (ParseState *)(*arg);
+
+    stoptimeupdatemsg.stop_id.funcs.decode = stopid_cb;
+    stoptimeupdatemsg.stop_id.arg = parseCheck;
+
+    parseCheck->stop_match = false;
+    status = pb_decode(stream, &transit_realtime_TripUpdate_StopTimeUpdate_msg, &stoptimeupdatemsg);
+    checkErrors(status, stream);
+    if (!status) return false;
+
+    // quit if does not have arrival update
+    if (!stoptimeupdatemsg.has_arrival) {return true;}
+    // quit if stop_id is not desired stop
+    if (parseCheck->stop_match == false){return true;}
+
+    // use given time if provided
+    if (stoptimeupdatemsg.arrival.has_time){
+        parseCheck->arrivetime = stoptimeupdatemsg.arrival.time;}
+    else // use scheduled time
+        {parseCheck->arrivetime = stoptimeupdatemsg.arrival.scheduled_time;}
+    
+    int delaytime = 0;
+    if (stoptimeupdatemsg.arrival.has_delay)
+        {delaytime = stoptimeupdatemsg.arrival.delay;} 
+
+    parseCheck->arrivetime += delaytime; // arrivetime holds the number of seconds since posix time of the arrival
+    time_t now;
+    time(&now);
+    int seconds_until = parseCheck->arrivetime - now;
+    if (seconds_until < 0) 
+    minutes_until = 0;   // already arrived
+    else
+        minutes_until = seconds_until / 60;
+
+    parseCheck->found = true;
+    return false;   // abort pb_decode()    
+
+    return true;
+}
+
+bool stopid_cb(pb_istream_t *stream, const pb_field_t *field, void **arg){
+    char stop_id[STOP_ID_MAX];   // adjust size if needed
+
+    size_t len = stream->bytes_left;
+    if (len >= sizeof(stop_id)) len = sizeof(stop_id) - 1;
+
+    if (!pb_read(stream, (uint8_t *)stop_id, len)) return false;
+    stop_id[len] = '\0';
+
+    Serial.printf("Stop ID: %s\n", stop_id);
+    ParseState *st = (ParseState *)(*arg);
+    
+
+    if (strcmp(stop_id, "4072") != 0) { 
+        st->stop_match = false; // stop not matched
+        return true;   
+    }
+
+    st->stop_match = true;     // stop route matched
+
+    return true;
+}
+
+void init_time(void)
+{
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "pool.ntp.org");
+    sntp_init();
 }
 
 esp_err_t checkErrors(bool status, pb_istream_t *stream){

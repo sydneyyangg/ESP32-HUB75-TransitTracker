@@ -10,9 +10,9 @@ static int s_retry_num = 0;
 void NetworkTask(void *pvParameters){
     for (;;){
         // connect to wifi
-        // fetch data
-        // parse data
-        ESP_ERROR_CHECK(esp_wifi_stop());
+        init_time();
+        parse_pb();
+        //ESP_ERROR_CHECK(esp_wifi_stop());
         vTaskDelay(30000 / portTICK_PERIOD_MS);
     }
 }

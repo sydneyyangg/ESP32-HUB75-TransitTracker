@@ -11,8 +11,11 @@
 #include "lwip/netif.h"
 #include "driver/gpio.h"
 
+#include "parse.cpp"
+
 // WiFi Configuration
 
+#define MAX_RETRY      5
 // Built-in LED (many ESP32 dev boards use GPIO2)
 #define BLINK_GPIO GPIO_NUM_2
 
