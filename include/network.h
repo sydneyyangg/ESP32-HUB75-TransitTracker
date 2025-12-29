@@ -15,12 +15,11 @@
 #include "esp_netif_net_stack.h"
 #include "lwip/netif.h"
 #include "driver/gpio.h"
+#include <esp_task_wdt.h>
 
 #include "parse.h"
 
 // WiFi Configuration
-#define WIFI_SSID      "Toby"
-#define WIFI_PASS      "Micah6JMH"  // Empty for open network, or set password for secured network
 
 #define MAX_RETRY      5
 // Built-in LED (many ESP32 dev boards use GPIO2)

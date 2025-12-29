@@ -17,7 +17,7 @@ void setup(){
   xTaskCreatePinnedToCore(
     DisplayImage, // task function
     "DisplayImage", // task name
-    2048, // stack size
+    4096, // stack size
     NULL, // params
     3, // priority
     &DisplayImageHandle, // task handle
@@ -28,7 +28,7 @@ void setup(){
   xTaskCreatePinnedToCore(
     BufferTask, // task function
     "BufferTask", // task name
-    2048, // stack size
+    4096, // stack size
     NULL, // params
     2, // priority
     &BufferHandle, // task handle
@@ -39,7 +39,7 @@ void setup(){
   xTaskCreatePinnedToCore(
     NetworkTask, // task function
     "NetworkTask", // task name
-    20480, // stack size
+    8192, // stack size
     NULL, // params
     3, // priority
     &NetworkFetchHandle, // task handle

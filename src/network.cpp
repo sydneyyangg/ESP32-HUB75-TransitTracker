@@ -8,11 +8,26 @@ static EventGroupHandle_t s_wifi_event_group; // This is set as either the fail 
 static int s_retry_num = 0;
 
 void NetworkTask(void *pvParameters){
+    const esp_task_wdt_config_t config = {
+        .timeout_ms = 30000,          
+        .idle_core_mask = 0,  // monitor core 0 idle task (use (1<<0)|(1<<1) for both cores)
+        .trigger_panic = true        
+    };
+    
+    esp_err_t wdt_ret = esp_task_wdt_init(&config);  // 30 second timeout instead of default 5
+    if (wdt_ret == ESP_ERR_INVALID_STATE) {
+    esp_task_wdt_reconfigure(&config);
+    }
+
+        // subscribe this task so we can reset it
+    esp_task_wdt_add(NULL);
 
     for (;;){
         Serial.println("network task called");
         // connect to wifi
+        esp_task_wdt_reset();        // before work
         parse_pb();
+        esp_task_wdt_reset();        // after work
         //ESP_ERROR_CHECK(esp_wifi_stop());
         vTaskDelay(5000 / portTICK_PERIOD_MS);
         
