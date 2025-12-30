@@ -16,15 +16,14 @@
 #define ROUTE_ID_MAX 16
 #define STOP_ID_MAX 32
 
-
 extern bool status;
 extern int minutes_until;
 
 typedef struct {
     bool route_match;
     bool stop_match;
-    bool found;
-    int arrivetime;
+    bool anyfound;
+    int min_minutes;
 } ParseState;
 
 // ---- API ----

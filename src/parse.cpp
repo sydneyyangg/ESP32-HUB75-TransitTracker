@@ -97,17 +97,18 @@ esp_err_t parse_pb(){
     feedmsg.entity.arg = &state;  
     feedmsg.entity.funcs.decode = entity_cb;
     bool decode_ok = pb_decode(&stream, &transit_realtime_FeedMessage_msg, &feedmsg);
-
     
     esp_http_client_close(client);
     esp_http_client_cleanup(client);
 
-    if (state.found){
+    if (state.anyfound){
+        minutes_until = state.min_minutes;
+        Serial.printf("*** Soonest! Route 201, Stop 4072, %d minutes ***\n", minutes_until);
         return ESP_OK;
     }
 
-    if (!decode_ok && !state.found) {
-        Serial.printf("Decoding failed: %s\n", PB_GET_ERROR(&stream));
+    if (!decode_ok && !state.anyfound) {
+        Serial.printf("Decoding failed or didn't find a state: %s\n", PB_GET_ERROR(&stream));
         return ESP_FAIL;
     }
 
@@ -147,17 +148,11 @@ bool entity_cb(pb_istream_t *stream, const pb_field_t *field, void **arg){
 
     ParseState *parseCheck = (ParseState *)(*arg);
 
-    // Check if we already found what we need
-    if (parseCheck->found) {
-        return false;  // Stop processing more entities
-    }
-
     transit_realtime_FeedEntity currententity = transit_realtime_FeedEntity_init_zero;
 
     // Reset flags for this entity
     parseCheck->route_match = false;
     parseCheck->stop_match = false;
-    parseCheck->found = false;
 
     // entity => tripupdate => route_id must be ... (201) or ... [later]
     currententity.trip_update.trip.route_id.funcs.decode = routeid_cb;
@@ -170,11 +165,6 @@ bool entity_cb(pb_istream_t *stream, const pb_field_t *field, void **arg){
     parseCheck->stop_match = false;
 
     status = pb_decode(stream, &transit_realtime_FeedEntity_msg, &currententity);
-
-    // If we aborted decode because we found the target, don't treat as error
-    if (!status && parseCheck->found) {
-        return false;  // Success! Stop processing
-    }
     
     if (!status) {
         checkErrors(status, stream);
@@ -213,7 +203,7 @@ bool routeid_cb(pb_istream_t *stream, const pb_field_t *field, void **arg)
 bool stoptimeupdates_cb(pb_istream_t *stream, const pb_field_t *field, void **arg){
     ParseState *parseCheck = (ParseState *)(*arg);
 
-     // CRITICAL: Check if we're on the right route FIRST
+     // Check if we're on the right route FIRST
     if (!parseCheck->route_match) {
         // Wrong route, skip this stop_time_update without processing
         pb_skip_field(stream, PB_WT_STRING);  // Skip this field
@@ -232,39 +222,34 @@ bool stoptimeupdates_cb(pb_istream_t *stream, const pb_field_t *field, void **ar
     // quit if does not have arrival update
     if (!stoptimeupdatemsg.has_arrival) {return true;}
     // quit if stop_id is not desired stop
-    if (parseCheck->stop_match == false){return true;}
+    if (!parseCheck->stop_match){return true;}
 
-    // use given time if provided
-    if (stoptimeupdatemsg.arrival.has_time){
-        parseCheck->arrivetime = stoptimeupdatemsg.arrival.time;}
-    else // use scheduled time
-        {parseCheck->arrivetime = stoptimeupdatemsg.arrival.scheduled_time;}
+    // Calculate arrival time
+    int64_t arrival = stoptimeupdatemsg.arrival.has_time 
+        ? stoptimeupdatemsg.arrival.time 
+        : stoptimeupdatemsg.arrival.scheduled_time;
     
-    int delaytime = 0;
-    if (stoptimeupdatemsg.arrival.has_delay)
-        {delaytime = stoptimeupdatemsg.arrival.delay;} 
+    if (stoptimeupdatemsg.arrival.has_delay) {
+        arrival += stoptimeupdatemsg.arrival.delay; // arrivetime holds the number of seconds since posix time of the arrival
+    }
 
-    parseCheck->arrivetime += delaytime; // arrivetime holds the number of seconds since posix time of the arrival
     time_t now;
     time(&now);
-    int seconds_until = parseCheck->arrivetime - now;
-    if (seconds_until < 0) {
-        minutes_until = 123;   // already arrived
+    int current_sec = arrival - now;
+    int current_min = 0;
+    if (current_sec < 0) {
+        current_min = 123;   // already arrived
     } else {
-        minutes_until = seconds_until / 60;
+        current_min = current_sec / 60;
     }
     
-    Serial.printf("*** FOUND IT! Route 201, Stop 4072, %d minutes ***\n", minutes_until);
-
-    parseCheck->found = true;
-
-    // Close HTTP connection immediately to stop downloading more data
-    HttpPbStreamCtx *ctx = (HttpPbStreamCtx *)stream->state;
-    if (ctx && ctx->client) {
-        esp_http_client_close(ctx->client);
+    if (!parseCheck->anyfound || (current_min < parseCheck->min_minutes)){
+        parseCheck->min_minutes = current_min;
+        parseCheck->anyfound = true;
     }
-    
-    return false;  // Abort decode - we found what we need!
+
+    Serial.printf("Found candidate: Route 201, Stop 4072, %d minutes\n", current_min);
+    return true;   
 }
 
 bool stopid_cb(pb_istream_t *stream, const pb_field_t *field, void **arg)
