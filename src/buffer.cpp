@@ -1,4 +1,4 @@
-// using fastled, cofnigure a buffer to send to dma 
+// using fastled, configure a buffer to send to dma 
 #include "display.h"
 
 CRGB *ledbuff = (CRGB *)malloc(NUM_LEDS * sizeof(CRGB));  

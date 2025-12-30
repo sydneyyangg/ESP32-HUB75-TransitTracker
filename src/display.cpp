@@ -1,3 +1,4 @@
+// propogate to led drivers on display
 #include "display.h"
 
 MatrixPanel_I2S_DMA *matrix = nullptr;

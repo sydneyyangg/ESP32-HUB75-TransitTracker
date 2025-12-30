@@ -1,6 +1,7 @@
+// parses protobuf files using nanopb
+// configs as a http client and streams http data
+// parses for arrival times of a particular stop and route id
 #include "parse.h"
-
-// Global definitions (declared extern in parse.h)
 
 bool status = false;
 int minutes_until = 0;
@@ -191,8 +192,6 @@ bool routeid_cb(pb_istream_t *stream, const pb_field_t *field, void **arg)
     if (!pb_read(stream, (uint8_t *)route_id, len)) return false;
     route_id[len] = '\0';
 
-    Serial.printf("Route ID seen: %s\n", route_id);
-
     ParseState *st = (ParseState *)(*arg);
     st->route_match = (strcmp(route_id, "201") == 0);
 
@@ -261,8 +260,6 @@ bool stopid_cb(pb_istream_t *stream, const pb_field_t *field, void **arg)
 
     if (!pb_read(stream, (uint8_t *)stop_id, len)) return false;
     stop_id[len] = '\0';
-
-    Serial.printf("Stop ID: %s\n", stop_id);
 
     ParseState *st = (ParseState *)(*arg);
     st->stop_match = (strcmp(stop_id, "4072") == 0);

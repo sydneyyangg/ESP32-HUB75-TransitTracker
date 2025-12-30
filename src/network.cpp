@@ -1,7 +1,5 @@
-// configure and host wifi connection with esp and device
-// fetch http rest api from transit
-// parse for data
-// store to send to ui task
+// configures the wifi, initializes connection
+// contains network task, which parses transit data every 30s in parse.cpp
 #include "network.h"
 
 static EventGroupHandle_t s_wifi_event_group; // This is set as either the fail or connect bit to enable wifi init.
@@ -9,27 +7,27 @@ static int s_retry_num = 0;
 
 void NetworkTask(void *pvParameters){
     const esp_task_wdt_config_t config = {
-        .timeout_ms = 30000,          
+        .timeout_ms = 15000,  // extend watchdog timeout to 15 seconds to stop panic trigger
         .idle_core_mask = 0,  // monitor core 0 idle task (use (1<<0)|(1<<1) for both cores)
         .trigger_panic = true        
     };
     
-    esp_err_t wdt_ret = esp_task_wdt_init(&config);  // 30 second timeout instead of default 5
+    esp_err_t wdt_ret = esp_task_wdt_init(&config); 
     if (wdt_ret == ESP_ERR_INVALID_STATE) {
     esp_task_wdt_reconfigure(&config);
     }
 
-        // subscribe this task so we can reset it
-    esp_task_wdt_add(NULL);
+    // subscribe this task so we can reset it
+    esp_task_wdt_add(NULL); 
 
     for (;;){
         Serial.println("network task called");
         // connect to wifi
-        esp_task_wdt_reset();        // before work
+        esp_task_wdt_reset();       
         parse_pb();
-        esp_task_wdt_reset();        // after work
+        esp_task_wdt_reset();        
         //ESP_ERROR_CHECK(esp_wifi_stop());
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(30000 / portTICK_PERIOD_MS);
         
         UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
         Serial.printf("NetworkTask stack free: %u bytes\n", watermark * sizeof(StackType_t));
@@ -157,7 +155,7 @@ esp_err_t wifi_init_sta(void)
 
 // define lwip ipv6 hook to do nothing
 // needed to patch esp-idf and arduino environment compatibility
-// pre v. 3.2.0 (link)
+// pre v. 3.2.0
 #if CONFIG_LWIP_HOOK_IP6_INPUT_CUSTOM
 extern "C" int lwip_hook_ip6_input(struct pbuf *p, struct netif *inp) __attribute__((weak));
 extern "C" int lwip_hook_ip6_input(struct pbuf *p, struct netif *inp) {
