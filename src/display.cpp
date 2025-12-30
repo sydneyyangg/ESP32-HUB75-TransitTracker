@@ -26,60 +26,62 @@ void DisplayImage(void *pvParameters){
 
         Serial.println("ClearScreen()");
         matrix->clearScreen();
-        delay(PATTERN_DELAY);
-         
-        // Clearing CRGB ledbuff
-        buffclear(frontLedBuff);
+        delay(500);
 
-        //propogate back buff to front 
-        memcpy(frontLedBuff, ledbuff, NUM_LEDS * sizeof(CRGB));
-        
-        //display on screen 
-        mxfill(frontLedBuff);
-        Serial.println("LedBuffer MxFill");
-        delay(PATTERN_DELAY);
-
-        Serial.println("Text display");
+        Serial.printf("Minutes until: %d min\n", minutes_until);
         matrix->clearScreen();
-        snprintf(str, sizeof(str), "* ESP32 I2S DMA!!! *");
-        drawText(0);
-        delay(PATTERN_DELAY);
-
-        Serial.print("Minutes Until: ");
-        Serial.println(minutes_until);
-        matrix->clearScreen();
-        snprintf(str, sizeof(str), "%d min", minutes_until);
         drawText(0);
         
         Serial.println("\n====\n");
 
         // take a rest for a while
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        vTaskDelay(15000 / portTICK_PERIOD_MS);
         
         UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
         Serial.printf("DisplayTask stack free: %u bytes\n", watermark * sizeof(StackType_t));
-
     }
 }
-
+// 0x666d
 
 #ifdef NO_GFX
 void drawText(int colorWheelOffset){}
 #else
 void drawText(int colorWheelOffset){
-  // draw some text
+  // draw routes
   matrix->setTextSize(1);     // size 1 == 8 pixels high
   matrix->setTextWrap(false); // Don't wrap at end of line - will do ourselves
+  matrix->setTextColor(0x666d);
 
-  matrix->setCursor(5, 5);    // start at top left, with 5,5 pixel of spacing
   uint8_t w = 0;
 
+  snprintf(str, sizeof(str), "201");
+
+  matrix->setCursor(5, 5);    // start at top left, with 5,5 pixel of spacing
   for (w=0; w<strlen(str); w++) {
-    matrix->setTextColor(colorWheel((w*32)+colorWheelOffset));
     matrix->print(str[w]);
   }
+
+  matrix->setCursor(5, 18);
+  for (w=0; w<strlen(str); w++) {
+      matrix->print(str[w]);
+  }
+
+  matrix->setCursor(96, 5);
+  snprintf(str, sizeof(str), "%d min", minutes_until);
+  for (w=0; w<strlen(str); w++) {
+      matrix->print(str[w]);
+  }
+
+  snprintf(str, sizeof(str), "Con. College");
+  matrix->setCursor(21, 5);
+  matrix->setTextColor(0xffff);
+  for (w=0; w<strlen(str); w++) {
+      matrix->print(str[w]);
+  }
+
 }
 #endif
+
 
 uint16_t colorWheel(uint8_t pos) {
   if(pos < 85) {
@@ -106,4 +108,15 @@ void IRAM_ATTR mxfill(CRGB *leds){
   } while(y);
 }
 
+void displayBufferImage(){
+  // Clearing CRGB ledbuff
+  // buffclear(frontLedBuff);
 
+  // //propogate back buff to front 
+  // // memcpy(frontLedBuff, ledbuff, NUM_LEDS * sizeof(CRGB));
+  
+  // //display on screen 
+  // mxfill(frontLedBuff);
+  // Serial.println("LedBuffer MxFill");
+  // vTaskDelay(500 / portTICK_PERIOD_MS);
+}

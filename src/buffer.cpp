@@ -11,26 +11,27 @@ void initbackbuffer(){
 }
 
 void BufferTask(void *pvParameters){
-  for (;;){
+  for (;;){ 
      Serial.println("buffer task called");
-    // created random color gradient in ledbuff
-        uint8_t color1 = 0;
-        uint8_t color2 = random8();
-        uint8_t color3 = 0;
+    // // created random color gradient in ledbuff
+    //     uint8_t color1 = 0;
+    //     uint8_t color2 = random8();
+    //     uint8_t color3 = 0;
 
-        for (uint16_t i = 0; i<NUM_LEDS; ++i){
-            ledbuff[i].r=color1++; // for each led, make the red go from 0 to (32*64 (numleds))
-            ledbuff[i].g=color2; // " " ", " " green be the random color
-            if (i % PANE_WIDTH == 0) 
-            color3+=255/PANE_HEIGHT;
+    //     for (uint16_t i = 0; i<NUM_LEDS; ++i){
+    //         ledbuff[i].r=color1++; // for each led, make the red go from 0 to (32*64 (numleds))
+    //         ledbuff[i].g=color2; // " " ", " " green be the random color
+    //         if (i % PANE_WIDTH == 0) 
+    //         color3+=255/PANE_HEIGHT;
 
-            ledbuff[i].b=color3;
-        }
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
+    //         ledbuff[i].b=color3;
+    //     }
+    //     vTaskDelay(10000 / portTICK_PERIOD_MS);
         
-        UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
-        Serial.printf("BufferTask stack free: %u bytes\n", watermark * sizeof(StackType_t));
+    //     UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
+    //     Serial.printf("BufferTask stack free: %u bytes\n", watermark * sizeof(StackType_t));
 
+            vTaskDelay(10000 / portTICK_PERIOD_MS);
    }
 }
 

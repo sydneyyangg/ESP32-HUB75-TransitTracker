@@ -8,7 +8,6 @@
 
 // gradient buffer
 extern CRGB *ledbuff;
-//
 
 void initbackbuffer();
 void BufferTask(void *pvParameters);
