@@ -72,8 +72,8 @@ void drawText(int colorWheelOffset){
       matrix->print(str[w]);
   }
 
-  snprintf(str, sizeof(str), "Con. College");
-  matrix->setCursor(21, 5);
+  snprintf(str, sizeof(str), "Con.College");
+  matrix->setCursor(24, 5);
   matrix->setTextColor(0xffff);
   for (w=0; w<strlen(str); w++) {
       matrix->print(str[w]);

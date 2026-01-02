@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 #include <FastLED.h>
+#include <Adafruit_GFX.h>
+//#include <Fonts/FreeSans9pt7b.h>
 
 #include "buffer.h"
 #include "parse.h"
