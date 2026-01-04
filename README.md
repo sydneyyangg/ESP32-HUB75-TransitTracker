@@ -1,10 +1,10 @@
 # Transit Tracker using HUB75 LED Matrix Panel with ESP32
 
 Depending on the region, some bus stops use LED panels to display real‑time ETAs for arriving routes.
-This project lets you host a similar sign yourself using an ESP32 and a HUB75 LED matrix panel. It is mostly plug and play besides a few configs you
-have to set for your individual setup.
+This project lets you host a similar sign yourself using an ESP32 and a HUB75 LED matrix panel. 
+It is mostly plug and play besides some configurations tailored to your individual setup.
 
-The firmware fetches **Google Transit Feed Specification (GTFS‑Realtime)** data from GRT, parses it using **Protocol Buffers**, and updates the display every 30 seconds.
+The firmware fetches **Google Transit Feed Specification (GTFS‑Realtime)** data, parses it using **Protocol Buffers**, and updates the display every 30 seconds.
 
 > Data source: [GRT Open Data (GTFS / GTFS‑Realtime)](https://www.grt.ca/en/about-grt/open-data.aspx)
 
@@ -106,7 +106,6 @@ Set your Wi‑Fi credentials in include\network.h:
 
    * Renders route numbers and arrival times
    * Uses DMA to continuously refresh the HUB75 panel
-   * Runs independently of network activity
 
 The update cycle repeats every **30 seconds**.
 
