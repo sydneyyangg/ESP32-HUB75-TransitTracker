@@ -20,17 +20,16 @@ The firmware fetches **Google Transit Feed Specification (GTFS‑Realtime)** dat
 * **DMA‑driven HUB75 display output**
 
   * Uses [ESP32‑HUB75‑MatrixPanel‑DMA](https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA)
-  * Offloads refresh timing from the CPU for smooth, flicker‑free output
+  * Offloads from the CPU
 
 * **Low‑memory GTFS‑Realtime parsing**
 
   * Uses **nanopb** with streaming decode
-  * No full message buffering
   * Early‑exit parsing to reduce RAM usage and latency
 
 * **Text rendering via Adafruit GFX**
 
-  * Familiar Arduino‑style graphics API
+  * Uses Arduino framework to access Adafruit GFX library
   * Built using PlatformIO while targeting ESP32
 
 ---
@@ -46,7 +45,7 @@ The firmware fetches **Google Transit Feed Specification (GTFS‑Realtime)** dat
 
 ## Software Requirements
 
-* **PlatformIO** (VS Code recommended)
+* **PlatformIO** on VSCode: install through extensions
 * ESP32 platform support installed in PlatformIO
 * USB drivers for your ESP32 board.
 
