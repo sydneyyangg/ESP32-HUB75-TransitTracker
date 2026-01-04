@@ -1,6 +1,6 @@
 # Transit Tracker using HUB75 LED Matrix Panel with ESP32
 
-Bus stops in the Waterloo / Kitchener / Cambridge (GRT) region use LED panels to display real‑time ETAs for arriving routes.
+Depending on the region, some bus stops use LED panels to display real‑time ETAs for arriving routes.
 This project lets you host a similar sign yourself using an ESP32 and a HUB75 LED matrix panel. It is mostly plug and play besides a few configs you
 have to set for your individual setup.
 
@@ -52,6 +52,15 @@ The firmware fetches **Google Transit Feed Specification (GTFS‑Realtime)** dat
 
 ---
 
+## How to Use
+
+1. Power the HUB75 panel and ESP32
+2. ESP32 connects to Wi‑Fi automatically
+3. The display initializes and shows arrival times for configured stops
+4. ETAs refresh every 30 seconds
+
+---
+
 ## Setup
 
 ### 1. Clone the repository
@@ -75,7 +84,7 @@ Set your Wi‑Fi credentials in include\network.h:
 
 * Configure the URL where transit data is fetched from (e.g. [GRT API](https://webapps.regionofwaterloo.ca/api/grt-routes/api/tripupdates/1)).
 
-### 4. Build and upload
+### 5. Build and upload
 1. Open the PIO extension on the VSCode extension sidebar
 2. Click the dropdown for ESP32
 3. "Build"
@@ -104,29 +113,18 @@ The update cycle repeats every **30 seconds**.
 
 ---
 
-## How to Use
-
-1. Power the HUB75 panel and ESP32
-2. ESP32 connects to Wi‑Fi automatically
-3. The display initializes and shows arrival times for configured stops
-4. ETAs refresh every 30 seconds
-
----
-
 ## Customization
 
 * Change displayed routes or stops by modifying the GTFS parsing filters in parse.h.
 * Customize fonts, layout, or colors via Adafruit GFX in display.cpp.
+* Add animations by filling the buffer in buffer.cpp. Tools in the Adafruit GFX Library support image to buffer conversions: [Img2Code](https://github.com/ehubin/Adafruit-GFX-Library/tree/master/Img2Code).
 
 ---
 
-## Limitations / Notes
+## Future Plans
 
-* Designed specifically for **GTFS‑Realtime** feeds
-* Memory usage is tuned for ESP32; adding features may require careful heap management
-* HUB75 DMA uses I2S internally, limiting some peripheral pin choices
-
----
+* Support easier configuration in header files (e.g. just changing header files)
+* Add examples
 
 ## Credits
 
@@ -134,9 +132,3 @@ The update cycle repeats every **30 seconds**.
 * Adafruit GFX Library
 * nanopb (Protocol Buffers for embedded systems)
 * Grand River Transit Open Data
-
----
-
-## License
-
-MIT License (or specify if different)
