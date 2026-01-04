@@ -7,7 +7,7 @@ static int s_retry_num = 0;
 
 void NetworkTask(void *pvParameters){
     const esp_task_wdt_config_t config = {
-        .timeout_ms = 30000,  // extend watchdog timeout to 30 seconds to stop panic trigger
+        .timeout_ms = 90000,  // extend watchdog timeout to 30 seconds to stop panic trigger
         .idle_core_mask = 0,  // monitor core 0 idle task (use (1<<0)|(1<<1) for both cores)
         .trigger_panic = true        
     };
@@ -27,7 +27,7 @@ void NetworkTask(void *pvParameters){
         parse_pb();
         esp_task_wdt_reset();        
         //ESP_ERROR_CHECK(esp_wifi_stop());
-        vTaskDelay(15000 / portTICK_PERIOD_MS);
+        vTaskDelay(30000 / portTICK_PERIOD_MS);
         
         UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
         Serial.printf("NetworkTask stack free: %u bytes\n", watermark * sizeof(StackType_t));

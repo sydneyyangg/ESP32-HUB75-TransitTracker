@@ -17,13 +17,22 @@
 #define STOP_ID_MAX 32
 
 extern bool status;
+
 extern int minutes_until;
+extern int minutes_until2;
+extern char finalRoute1[ROUTE_ID_MAX];
+extern char finalRoute2[ROUTE_ID_MAX];
 
 typedef struct {
+    char routeId[ROUTE_ID_MAX]; // the current route
     bool route_match;
     bool stop_match;
     bool anyfound;
     int min_minutes;
+    int min_minutes2;      // Add second minimum
+    bool has_min2;
+    char route_1[ROUTE_ID_MAX]; // the min eta route
+    char route_2[ROUTE_ID_MAX]; // the second min eta route
 } ParseState;
 
 // ---- API ----

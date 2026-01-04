@@ -25,15 +25,15 @@ void setup(){
   );
 
   
-  xTaskCreatePinnedToCore(
-    BufferTask, // task function
-    "BufferTask", // task name
-    4096, // stack size
-    NULL, // params
-    2, // priority
-    &BufferHandle, // task handle
-    1
-  );
+  // xTaskCreatePinnedToCore(
+  //   BufferTask, // task function
+  //   "BufferTask", // task name
+  //   4096, // stack size
+  //   NULL, // params
+  //   2, // priority
+  //   &BufferHandle, // task handle
+  //   1
+  // );
 
   
   xTaskCreatePinnedToCore(
@@ -41,7 +41,7 @@ void setup(){
     "NetworkTask", // task name
     8192, // stack size
     NULL, // params
-    3, // priority
+    2, // priority
     &NetworkFetchHandle, // task handle
     0
   );
