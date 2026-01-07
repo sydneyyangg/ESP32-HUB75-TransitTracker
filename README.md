@@ -89,28 +89,6 @@ Set your Wi‑Fi credentials in include\network.h:
 3. "Build"
 4. Then "Upload and Monitor".
 
-## How It Works
-
-1. **Network Task**
-
-   * Connects to Wi‑Fi
-   * Fetches GTFS‑Realtime protobuf data over HTTP
-
-2. **Parsing Task**
-
-   * Streams protobuf data using nanopb
-   * Extracts route IDs, stop times, and ETAs
-   * Discards unused fields early to save memory
-
-3. **Display Task**
-
-   * Renders route numbers and arrival times
-   * Uses DMA to continuously refresh the HUB75 panel
-
-The update cycle repeats every **30 seconds**.
-
----
-
 ## Customization
 
 * Change displayed routes or stops by modifying the GTFS parsing filters in parse.h.
