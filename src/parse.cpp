@@ -115,7 +115,6 @@ esp_err_t parse_pb(){
         strncpy(finalRoute2, state.route_2, ROUTE_ID_MAX - 1);
         finalRoute2[ROUTE_ID_MAX - 1] = '\0';
 
-        Serial.printf("*** Soonest! Route 201, Stop 4072, %d minutes ***\n", minutes_until);
         return ESP_OK;
     }
 
@@ -268,11 +267,11 @@ bool stoptimeupdates_cb(pb_istream_t *stream, const pb_field_t *field, void **ar
         parseCheck->has_min2 = true;
         parseCheck->min_minutes = current_min;
 
-        strncpy(parseCheck->route_1, parseCheck->routeId, ROUTE_ID_MAX - 1); // assign route 1
-        parseCheck->route_1[ROUTE_ID_MAX - 1] = '\0';
-
         strncpy(parseCheck->route_2, parseCheck->route_1, ROUTE_ID_MAX - 1); // assign route 2
         parseCheck->route_2[ROUTE_ID_MAX - 1] = '\0';
+
+        strncpy(parseCheck->route_1, parseCheck->routeId, ROUTE_ID_MAX - 1); // assign route 1
+        parseCheck->route_1[ROUTE_ID_MAX - 1] = '\0';
 
     } else if (!parseCheck->has_min2 || current_min < parseCheck->min_minutes2) {
         // New second minimum found

@@ -30,7 +30,6 @@ void NetworkTask(void *pvParameters){
         vTaskDelay(30000 / portTICK_PERIOD_MS);
         
         UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
-        Serial.printf("NetworkTask stack free: %u bytes\n", watermark * sizeof(StackType_t));
     }
 }
 
@@ -122,7 +121,7 @@ esp_err_t wifi_init_sta(void)
             .ssid = WIFI_SSID,
             .password = WIFI_PASS,
             .threshold = {
-                .authmode = WIFI_AUTH_WPA2_PSK,
+                .authmode = WIFI_AUTH_OPEN,
             }
         },
     };

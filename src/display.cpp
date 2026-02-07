@@ -28,8 +28,8 @@ void DisplayImage(void *pvParameters){
         matrix->clearScreen();
         delay(500);
 
-        Serial.printf("Minutes until: %d min\n", minutes_until);
-        Serial.printf("(2)Minutes until: %d min\n", minutes_until2);
+        Serial.printf("Minutes until: %d min, route %s\n", minutes_until, finalRoute1);
+        Serial.printf("(2)Minutes until: %d min, route %s\n", minutes_until2, finalRoute2);
 
         matrix->clearScreen();
         drawText(0);
@@ -37,10 +37,9 @@ void DisplayImage(void *pvParameters){
         Serial.println("\n====\n");
 
         // take a rest for a while
-        vTaskDelay(15000 / portTICK_PERIOD_MS);
+        vTaskDelay(30000 / portTICK_PERIOD_MS);
         
         UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
-        Serial.printf("DisplayTask stack free: %u bytes\n", watermark * sizeof(StackType_t));
     }
 }
 // 0x666d
