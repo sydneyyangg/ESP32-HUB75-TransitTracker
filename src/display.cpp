@@ -28,17 +28,18 @@ void DisplayImage(void *pvParameters){
         matrix->clearScreen();
         delay(500);
 
-        Serial.printf("Minutes until: %d min\n", minutes_until);
+        Serial.printf("Minutes until: %d min, route %s\n", minutes_until, finalRoute1);
+        Serial.printf("(2)Minutes until: %d min, route %s\n", minutes_until2, finalRoute2);
+
         matrix->clearScreen();
         drawText(0);
         
         Serial.println("\n====\n");
 
         // take a rest for a while
-        vTaskDelay(15000 / portTICK_PERIOD_MS);
+        vTaskDelay(30000 / portTICK_PERIOD_MS);
         
         UBaseType_t watermark = uxTaskGetStackHighWaterMark(NULL);
-        Serial.printf("DisplayTask stack free: %u bytes\n", watermark * sizeof(StackType_t));
     }
 }
 // 0x666d
@@ -54,26 +55,47 @@ void drawText(int colorWheelOffset){
 
   uint8_t w = 0;
 
-  snprintf(str, sizeof(str), "201");
-
+  //print route 1
+  snprintf(str, sizeof(str), finalRoute1);
   matrix->setCursor(5, 5);    // start at top left, with 5,5 pixel of spacing
-  for (w=0; w<strlen(str); w++) {
+  for (w=0; w<strlen(str); w++) { 
     matrix->print(str[w]);
   }
 
+  // print route 2
+  snprintf(str, sizeof(str), finalRoute2);
   matrix->setCursor(5, 18);
   for (w=0; w<strlen(str); w++) {
       matrix->print(str[w]);
   }
 
-  matrix->setCursor(96, 5);
+  // print minutes until 1
   snprintf(str, sizeof(str), "%d min", minutes_until);
+  matrix->setCursor(96, 5);
   for (w=0; w<strlen(str); w++) {
       matrix->print(str[w]);
   }
 
-  snprintf(str, sizeof(str), "Con.College");
+    // print minutes until 2
+  snprintf(str, sizeof(str), "%d min", minutes_until2);
+  matrix->setCursor(96, 18);
+  for (w=0; w<strlen(str); w++) {
+      matrix->print(str[w]);
+  }
+
+  // display first line route name
+  bool is201 = !(strcmp(finalRoute1, "201"));
+  snprintf(str, sizeof(str), is201?"Con.College":"Columbia");
   matrix->setCursor(24, 5);
+  matrix->setTextColor(0xffff);
+  for (w=0; w<strlen(str); w++) {
+      matrix->print(str[w]);
+  }
+
+  // display second line route name
+  is201 = !(strcmp(finalRoute2, "201"));
+  snprintf(str, sizeof(str), is201?"Con.College":"Columbia");
+  matrix->setCursor(24, 18);
   matrix->setTextColor(0xffff);
   for (w=0; w<strlen(str); w++) {
       matrix->print(str[w]);
