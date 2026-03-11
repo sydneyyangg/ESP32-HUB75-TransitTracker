@@ -302,6 +302,23 @@ bool stopid_cb(pb_istream_t *stream, const pb_field_t *field, void **arg)
     return true;
 }
 
+//pb_callback_t _transit_realtime_TripDescriptor::route_id
+//The route_id from the GTFS that this selector refers to.
+bool routeid_cb(pb_istream_t *stream, const pb_field_t *field, void **arg)
+{
+    char route_id[ROUTE_ID_MAX];
+
+    size_t len = stream->bytes_left;
+    if (len >= sizeof(route_id)) len = sizeof(route_id) - 1;
+
+    if (!pb_read(stream, (uint8_t *)route_id, len)) return false;
+    route_id[len] = '\0';
+
+    ParseState *st = (ParseState *)(*arg);
+    st->route_match = (strcmp(route_id, "201") == 0);
+
+    return true;
+}
 
 void init_time(void)
 {
