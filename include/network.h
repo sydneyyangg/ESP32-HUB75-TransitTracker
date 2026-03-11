@@ -20,6 +20,8 @@
 #include "parse.h"
 
 // WiFi Configuration
+#define WIFI_SSID      "WiFiNetworkNameHere"
+#define WIFI_PASS      ""  // Empty for open network, or set password for secured network
 
 #define MAX_RETRY      5
 // Built-in LED (many ESP32 dev boards use GPIO2)
